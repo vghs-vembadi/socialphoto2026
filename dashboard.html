@@ -46,12 +46,12 @@
             const status = document.getElementById('status');
             const btn = document.getElementById('searchBtn');
             try {
-                status.innerText = "AI மாடல்கள் பதிவிறக்கப்படுகின்றன... சற்று انتظارவும்.";
+                status.innerText = "AI மாடல்கள் பதிவிறக்கப்படுகின்றன...";
                 
-                // Stable CDN Model path
-                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                // Using unpkg CDN for stable model loading
+                const MODEL_URL = 'https://unpkg.com/@vladmandic/face-api@1.7.12/model/';
                 
-                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
                 
@@ -59,7 +59,7 @@
                 btn.innerText = "படங்களை தேடுக";
                 btn.disabled = false;
             } catch (error) {
-                status.innerText = "AI மாடல்களை ஏற்றுவதில் பிழை! இணைய இணைப்பைச் சரிபார்க்கவும்.";
+                status.innerText = "AI மாடல்களை ஏற்றுவதில் பிழை! கன்சோலைப் (F12) பார்க்கவும்.";
                 console.error(error);
             }
         }
@@ -108,7 +108,7 @@
                 const studentImg = await faceapi.bufferToImage(resizedBlob);
                 
                 status.innerText = "உங்கள் முகப் படம் பகுப்பாய்வு செய்யப்படுகிறது...";
-                const studentDescriptor = await faceapi.detectSingleFace(studentImg).withFaceLandmarks().withFaceDescriptor();
+                const studentDescriptor = await faceapi.detectSingleFace(studentImg, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
 
                 if (!studentDescriptor) {
                     status.innerText = "அப்லோட் செய்த படத்தில் முகம் தெளிவாகத் தெரியவில்லை. வேறு படத்தை முயற்சிக்கவும்.";
@@ -125,7 +125,7 @@
                     
                     try {
                         const img = await faceapi.fetchImage(path);
-                        const results = await faceapi.detectAllFaces(img).withFaceLandmarks().withFaceDescriptors();
+                        const results = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
                         
                         if (results.length > 0) {
                             for (let res of results) {
