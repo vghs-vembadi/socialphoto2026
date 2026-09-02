@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <title>Vembadi Girls' High School - Social Photos</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 300px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .error { color: red; font-size: 13px; text-align: center; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h3 style="text-align: center;">2026 Social Portal</h3>
+        <div id="error" class="error"></div>
+        <input type="text" id="index_no" placeholder="Index Number" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button onclick="login()">உள்நுழைக (Login)</button>
+    </div>
+
+    <script>
+        async function login() {
+            const idx = document.getElementById('index_no').value.trim();
+            const pwd = document.getElementById('password').value.trim();
+            
+            try {
+                const response = await fetch('students.json');
+                const students = await response.json();
+                
+                const student = students.find(s => s.index_no === idx && s.password === pwd);
+                if (student) {
+                    localStorage.setItem('logged_student', idx);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    document.getElementById('error').innerText = "தவறான Index Number அல்லது பாஸ்வேர்ட்!";
+                }
+            } catch (err) {
+                document.getElementById('error').innerText = "தரவைச் சரிபார்ப்பதில் பிழை!";
+            }
+        }
+    </script>
+</body>
+</html>
