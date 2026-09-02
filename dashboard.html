@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>எனது புகைப்படங்கள்</title>
+    <!-- face-api.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; text-align: center; background: #f9f9f9; }
@@ -32,10 +33,13 @@
             document.getElementById('welcomeText').innerText = "வணக்கம், Index No: " + loggedStudent;
         }
 
-        // event_photos ஃபோல்டரில் உள்ள உங்கள் போட்டோக்களின் பெயர்களை இங்கே கொடுக்கவும்
+        // உங்கள் GitHub ரிப்போசிட்டரியில் உள்ள நேரடிப் படங்களின் பெயர்கள்
         const eventPhotos = [
-            "event_photos/photo1.jpg",
-            "event_photos/photo2.jpg"
+            "IMG_5131.JPG",
+            "IMG_5132.JPG",
+            "IMG_5134.JPG",
+            "IMG_5135.JPG",
+            "IMG_5137.JPG"
         ];
 
         async function loadModels() {
