@@ -11,6 +11,7 @@
         .gallery { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 20px; }
         .gallery img { width: 200px; height: 150px; object-fit: cover; border-radius: 6px; border: 2px solid #ddd; }
         #status { font-weight: bold; color: #007BFF; margin: 15px 0; }
+        button:disabled { background: #ccc !important; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -19,7 +20,7 @@
         <p>உங்களது தற்போதைய போட்டோவை அப்லோட் செய்யவும். AI மூலமாக சோசியல் நிகழ்வுப் படங்களில் நீங்கள் இருப்பவை தேடப்படும்.</p>
         
         <input type="file" id="studentPhoto" accept="image/*"><br><br>
-        <button onclick="processFacialMatch()" style="padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer;">படங்களை தேடுக</button>
+        <button id="searchBtn" onclick="processFacialMatch()" disabled style="padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer;">AI மாடல்கள் ஏற்றப்படுகின்றன...</button>
 
         <p id="status"></p>
         <div class="gallery" id="resultGallery"></div>
@@ -33,7 +34,6 @@
             document.getElementById('welcomeText').innerText = "வணக்கம், Index No: " + loggedStudent;
         }
 
-        // உங்கள் GitHub ரிப்போசிட்டரியில் உள்ள நேரடிப் படங்களின் பெயர்கள்
         const eventPhotos = [
             "IMG_5131.JPG",
             "IMG_5132.JPG",
@@ -43,11 +43,21 @@
         ];
 
         async function loadModels() {
-            document.getElementById('status').innerText = "AI மாடல்கள் ஏற்றப்படுகின்றன...";
-            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
-            await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
-            await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
-            document.getElementById('status').innerText = "தயார்! உங்கள் போட்டோவை அப்லோட் செய்யுங்கள்.";
+            const status = document.getElementById('status');
+            const btn = document.getElementById('searchBtn');
+            try {
+                status.innerText = "AI மாடல்கள் இணையத்திலிருந்து பதிவிறக்கப்படுகின்றன...";
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
+                
+                status.innerText = "தயார்! உங்கள் போட்டோவை அப்லோட் செய்து 'படங்களை தேடுக' அழுத்தவும்.";
+                btn.innerText = "படங்களை தேடுக";
+                btn.disabled = false;
+            } catch (error) {
+                status.innerText = "AI மாடல்களை ஏற்றுவதில் பிழை! இன்டர்நெட் இணைப்பைச் சரிபார்க்கவும்.";
+                console.error(error);
+            }
         }
         loadModels();
 
@@ -55,32 +65,62 @@
             const fileInput = document.getElementById('studentPhoto');
             const status = document.getElementById('status');
             const gallery = document.getElementById('resultGallery');
+            const btn = document.getElementById('searchBtn');
             gallery.innerHTML = "";
 
-            if (fileInput.files.length === 0) { alert("தயவுசெய்து உங்கள் போட்டோவைத் தேர்ந்தெடுக்கவும்!"); return; }
-
-            status.innerText = "முகம் பகுப்பாய்வு செய்யப்படுகிறது...";
-            const studentImg = await faceapi.bufferToImage(fileInput.files[0]);
-            const studentDescriptor = await faceapi.detectSingleFace(studentImg).withFaceLandmarks().withFaceDescriptor();
-
-            if (!studentDescriptor) {
-                status.innerText = "அப்லோட் செய்த படத்தில் முகம் சரியாகத் தெரியவில்லை.";
-                return;
+            if (fileInput.files.length === 0) { 
+                alert("தயவுசெய்து உங்கள் போட்டோவைத் தேர்ந்தெடுக்கவும்!"); 
+                return; 
             }
 
-            status.innerText = "நிகழ்வுப் படங்களுடன் ஒப்பிடப்படுகிறது...";
-            const faceMatcher = new faceapi.FaceMatcher(new faceapi.LabeledFaceDescriptors('student', [studentDescriptor]), 0.6);
+            btn.disabled = true;
+            status.innerText = "உங்கள் முகப் படம் பகுப்பாய்வு செய்யப்படுகிறது...";
 
-            for (let path of eventPhotos) {
-                const img = await faceapi.fetchImage(path);
-                const results = await faceapi.detectAllFaces(img).withFaceLandmarks().withFaceDescriptors();
-                if (results.length > 0 && faceMatcher.findBestMatch(results[0].descriptor).label === 'student') {
-                    const imgElement = document.createElement('img');
-                    imgElement.src = path;
-                    gallery.appendChild(imgElement);
+            try {
+                const studentImg = await faceapi.bufferToImage(fileInput.files[0]);
+                const studentDescriptor = await faceapi.detectSingleFace(studentImg).withFaceLandmarks().withFaceDescriptor();
+
+                if (!studentDescriptor) {
+                    status.innerText = "அப்லோட் செய்த படத்தில் முகம் தெளிவாகத் தெரியவில்லை. வேறு படத்தை முயற்சிக்கவும்.";
+                    btn.disabled = false;
+                    return;
                 }
+
+                const faceMatcher = new faceapi.FaceMatcher(new faceapi.LabeledFaceDescriptors('student', [studentDescriptor]), 0.6);
+                let foundCount = 0;
+
+                for (let i = 0; i < eventPhotos.length; i++) {
+                    let path = eventPhotos[i];
+                    status.innerText = `நிகழ்வுப் படங்கள் சோதிக்கப்படுகின்றன (${i + 1}/${eventPhotos.length})...`;
+                    
+                    try {
+                        const img = await faceapi.fetchImage(path);
+                        const results = await faceapi.detectAllFaces(img).withFaceLandmarks().withFaceDescriptors();
+                        
+                        if (results.length > 0) {
+                            for (let res of results) {
+                                const bestMatch = faceMatcher.findBestMatch(res.descriptor);
+                                if (bestMatch.label === 'student') {
+                                    const imgElement = document.createElement('img');
+                                    imgElement.src = path;
+                                    gallery.appendChild(imgElement);
+                                    foundCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        console.log("கோப்பை ஏற்றுவதில் சிக்கல்: " + path);
+                    }
+                }
+
+                status.innerText = foundCount > 0 ? `உங்களுக்குரிய ${foundCount} புகைப்படங்கள் கண்டறியப்பட்டன!` : "இந்த நிகழ்வுப் படங்களில் உங்கள் முகம் ஒத்துப் போகவில்லை.";
+            } catch (e) {
+                status.innerText = "செயலாக்கத்தில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.";
+                console.error(e);
+            } finally {
+                btn.disabled = false;
             }
-            status.innerText = gallery.children.length > 0 ? "உங்களுக்குரிய புகைப்படங்கள் கண்டறியப்பட்டன!" : "உங்கள் முகம் இந்த படங்களில் ஒத்துப் போகவில்லை.";
         }
     </script>
 </body>
